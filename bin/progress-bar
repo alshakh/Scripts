@@ -1,0 +1,128 @@
+#!/bin/bash
+
+################################
+# progress-bar : output an indicator for progress
+# Author : Ahmed Alshakh - github.com/alshakh
+# License : GPLv3 - https://www.gnu.org/licenses/gpl-3.0.en.html
+# ----- Command ---------------
+# progress-bar percentage [-l|--length <bar-length>] [-s|--style <styleNumber>]
+# 	* percentage is 0 to 100 inclusive.
+# 	* <bar-length> is the length of bar squares, so, total length is bar-length + 2
+#		bar-length is optional. Default value is 10
+#	* <styleNumber>
+#		0 : [==>      ] (default)
+#		1 : [██▓░░░░░░]
+#		2 :  ▮▮▮▯▯▯▯▯▯
+# ----- Example ---------------
+# $seq 0 100 | while read i; do echo -e "\r$(./progress-bar $i -l 25)\c" ; done
+# ----- Futuer Ideas ----------
+#	* option [-cs|--custom-style <Start> <Filled> <Tip> <Unfilled> <End>]
+################################
+
+Style_START="["
+Style_FILLED="="
+Style_TIP=">"
+Style_UNFILLED=" "
+Style_END="]"
+
+barLength=10
+
+percentage=
+
+
+while [ "$1" ]
+do
+	case $1 in
+		-s | --style )
+			if [ $2 == 1 ]
+			then
+				Style_START="["
+				Style_FILLED="█" # must be exactly one char
+				Style_TIP="▓" # must be exactly one char
+				Style_UNFILLED="░" # must be exactly one char
+				Style_END="]"
+			elif [ $2 == 2 ]
+			then
+				Style_START=" "
+				Style_FILLED="▮" # must be exactly one char
+				Style_TIP="▮" # must be exactly one char
+				Style_UNFILLED="▯" # must be exactly one char
+				Style_END=" "
+			else
+				# default
+				Style_START="["
+				Style_FILLED="="
+				Style_TIP=">"
+				Style_UNFILLED=" "
+				Style_END="]"
+			fi
+			shift
+		;;
+		-l | --length )
+			if ! [[ $2 =~ ^[0-9]+$ ]]
+			then
+				echo "length argument should be a number" >&2
+				exit 1
+			fi
+			barLength=$2
+			shift
+		;;
+		* )
+			if ! [[ $1 =~ ^[0-9]+$ ]]
+			then
+				echo "argument $1 is unrecognized" >&2
+				exit 1
+			fi
+			
+			if (( $1 > 100 ))
+			then
+			    echo "percentages more than 100 are not supported" >&2
+			    exit 1
+			fi
+			percentage=$1
+		;;
+	esac
+	shift
+done
+
+if [[ -z "$percentage" ]]
+then
+	echo "no percentage supplied" >&2
+	exit 1
+fi
+
+##############################################
+
+filledLength=$(expr \( \( $percentage \* $barLength \) / 100 \) + 1 )
+# adding one because we want the smallest values to is 1 not 0
+filledWithoutTipLength=$(expr $filledLength - 1)
+unfilledLength=$(expr $barLength - $filledLength)
+
+output=""
+
+output="$output$Style_START"
+
+if (( $filledWithoutTipLength > 0 ))
+then
+	for i in $(eval echo {1..$filledWithoutTipLength})
+	do
+		output="$output$Style_FILLED"
+	done
+fi
+
+if [ $filledWithoutTipLength != $barLength ] # is there a tip? no tip if percentage is 100
+then
+	output="$output$Style_TIP"
+fi
+
+if (( $unfilledLength > 0 ))
+then
+	for i in $(eval echo {1..$unfilledLength})
+	do
+		output="$output$Style_UNFILLED"
+	done
+fi
+
+output="$output$Style_END"
+
+echo "$output"

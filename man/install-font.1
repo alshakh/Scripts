@@ -1,0 +1,46 @@
+.TH install-font 1 2015
+.SH NAME
+install\-font \- install fonts from files and remote github repos
+.SH SYNOPSIS
+\fBinstall\-font\fP [\fB\-g\fP|\fB\-\-global\-install\fP] [\fB\-h\fP|\fB\-\-help\fP] \fI\<FontExpr\>\fP [\fI\<FontExpr\>..\fP]
+.SH DESCRIPTION
+\fBinstall\-font\fP is used to install font files and fonts from their remote repos on github.
+In the case of local files, it just copies them and refresh fonts.
+However, in github repo case, it finds the latest release; downloads it;
+and find font files and then install them like local files.
+It installs the fonts locally for the current user by default unless \fIglobal install\fP is used.
+.IP \<FontExpr\>
+FontExpr is an expression to point to a fonts.
+Into the case of local files, it's just the normal path to it.
+For a github repo, the syntax \fI:user\-name/repo\-name\fP should be used.
+see examples for more.
+.IP \-g|\-\-global\-install
+This option installs the fonts for all users. Specifically, in \fB/usr/share/fonts/installeByScript\fP.
+If this option is not passed, local install is assumed.
+If global install is enabled, it MUST have root privilege.
+.IP \-h|\-\-help
+Show summary help page.
+.SH EXAMPLES
+.PP
+.EX
+install-font :khaledhosny/amiri\-font
+.EE
+.TP
+.PP
+Installs amiri font by Khaled Hosny to the local user.
+.PP
+.EX
+sudo install-font -g :khaledhosny/amiri\-font path/to/other/font.ttf
+.EE
+.TP
+.PP
+install the the two fonts for all users.
+.SH AUTHOR
+Written by Ahmed Alshakh \- \fIgithub.com/alshakh\fP
+.SH SOURCE CODE & BUGS
+Source code, bug reporting and other things can found on \fBhttps://www.github.com/alshakh/install-font\fP
+.SH LICENSE
+Copyright © 2015 Free Software Foundation, Inc.   License  GPLv3+:  GNU
+GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This  is  free  software:  you  are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.

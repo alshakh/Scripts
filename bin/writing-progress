@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Depends on progress-bar
+# This is just an experiment to see if I can write it. Not really usefull unless you're writing a long boring essay.
+# License : GPLv3 - https://www.gnu.org/licenses/gpl-3.0.en.html
+
+file="$1"
+if [[ -z "$file" ]]
+then
+	echo "no file supplied" >&2
+	exit 1
+fi
+
+goalWc="$2"
+if [[ -z "$goalWc" ]]
+then
+	echo "no word count" >&2
+	exit 1
+fi
+
+function curHash {
+	cksum "$file" | cut -d' ' -f1
+}
+function printWordCount {
+	local currWc=$(wc "$file" -w | cut -d' ' -f1 )
+
+	#local percentage=$(echo "scale=2;$currWc / $goalWc" | bc)
+	local percentage=$(expr \( $currWc \* 100 \) / $goalWc)
+
+	echo -e "\rwc=$currWc:$(progress-bar $percentage -l 10)$percentage%\c"
+}
+
+hash=$(curHash)
+printWordCount
+
+while true
+do
+	if [ "$(curHash)" != "$hash" ]
+	then
+		#printf "Changed $hash --> "
+		hash=$(cksum "$file" | cut -d' ' -f1)
+		#echo "$hash"
+
+		printWordCount
+	fi
+	sleep 2
+done

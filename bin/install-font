@@ -1,0 +1,169 @@
+#!/bin/bash
+
+#-----------------------------------------------------------------
+# install-font is simple script to install font files and remote github font repos
+# Copyright (C) 2015 Ahmed Alshakh
+#
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+#-----------------------------------------------------------------
+
+function isSudo {
+    if [ "$EUID" -ne 0 ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+function isFontRepo {
+    if [[ $1 =~ ^[a-zA-Z0-9_\-]*:[a-zA-Z0-9_\-]+\/[a-zA-Z0-9_\-]+$ ]] ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function refreshFonts {
+    echo "##==> Refresh Fonts Cache"
+    fc-cache -f
+}
+
+function usage {
+cat << EOF
+Usage:
+
+    install-font [-g|--global-install] [-h|--help] <FontExpr> [<FontExpr> ...]
+
+    <FontExpr>
+        It can be a font file like "amiri/amiri.ttf". It can, also,
+        be a remote github repo like ":khaledhosny/amiri-font"
+    -g
+    --global-install
+        Install fonts globally for all users. In: /usr/share/fonts/InstalledByScript
+    -h
+    -help
+        Show this message
+
+EOF
+}
+function getDownloadLink {
+    link=$(curl -s https://api.github.com/repos/$1/releases | grep browser_download_url | grep zip | head -n 1 | cut -d '"' -f 4)
+
+    if [[ -z "${link// }" ]] ; then
+        echo "Problem with getting the download link"  >&2
+        return 1
+    fi
+    echo $link
+}
+
+
+function processRepo {
+    RepoName=$(echo $1 | cut -d: -f2)
+
+    link=$(getDownloadLink $RepoName)
+    if [ $? -ne 0 ] ; then
+        return 1
+    fi
+    echo "Downloading from $link" >&2
+
+    TMP_NAME=TempFont_"$RANDOM".zip
+    rm -f /tmp/"$TMP_NAME"
+    rm -rf /tmp/"$TMP_NAME".d
+    wget -O /tmp/"$TMP_NAME" "$link" -q --show-progress
+    if ! unzip /tmp/"$TMP_NAME" -d /tmp/"$TMP_NAME".d/ >/dev/null ; then
+        echo "Error cannot unpack problem while unzipping repo" >&2
+        return 1
+    fi
+    # TODO : better handle on font type ttf or otf
+    find /tmp/"$TMP_NAME".d -type f -name "*.ttf" -o  -type f -name "*.otf"  | xargs
+}
+
+function installFontExpr {
+    FontFiles=$1
+    if isFontRepo $1 ; then
+        echo "==> Insalling Repo $1..."
+        FontFiles=$(processRepo $1)
+        if [ $? -ne 0 ] ; then
+            return 1
+        fi
+    fi
+    ##
+
+    # Create directory for fonts if does not exist
+    mkdir -p $FontDir
+
+    # Copy files
+    for f in $FontFiles ; do
+        if cp $f "$FontDir/" &>/dev/null ; then
+            echo "Copied: $f"
+        else
+            echo "Error! : $f"
+        fi
+    done
+}
+
+################################################
+
+FontExprs=""
+
+# Local install by default
+FontDir=~/.local/share/fonts/InstalledByScript #default value
+IsLocalInstall=true
+
+while [ "$1" ]
+do
+    case $1 in
+        -g|--global-install )
+            if ! isSudo ; then
+                echo "Cannot install globally without root privileges." >&2
+                echo "Remove -g or run as root." >&2
+                exit
+            fi
+            IsLocalInstall=false
+            FontDir=/usr/share/fonts/InstalledByScript
+        ;;
+        -h|--help )
+            usage
+            exit
+        ;;
+        * )
+            FontExprs="$FontExprs""$1 " # append
+        ;;
+    esac
+    shift
+done
+
+
+if [[ -z "${FontExprs// }" ]] ; then
+    echo "No fonts to install!"  >&2
+    exit
+fi
+
+echo "Fonts to be installed: $FontExprs"
+if $IsLocalInstall ; then
+    echo "They will be installed locally in the current user's home"
+else
+    echo "They will be install globally for all users"
+fi
+echo " In: $FontDir"
+
+
+
+read -p "Continue?[y/n] " choice
+case "$choice" in
+    y|Y )
+        FontExprs=$(echo "$FontExprs" | xargs -n1 | sort -u | xargs) # remove duplicates from list
+        for fe in $FontExprs ; do
+            installFontExpr "$fe"
+        done
+
+        refreshFonts
+        echo "Done !"
+    ;;
+    * )
+        echo "Aborted !"
+        exit
+    ;;
+esac
