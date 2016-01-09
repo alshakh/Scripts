@@ -29,4 +29,4 @@ sudo install-font -g :khaledhosny/amiri-font :khaledhosny/aref-ruqaa :dejavu-fon
 
 ### progress-bar
 
-Output an indicator for progress like `[==>      ]` or `[██▓░░░░░░]`.
+Output an indicator for progress like `[==>______]` or `[██▓░░░░░░]`.

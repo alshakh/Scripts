@@ -2,7 +2,6 @@
 
 ################################
 # progress-bar : output an indicator for progress
-# Author : Ahmed Alshakh - github.com/alshakh
 # License : GPLv3 - https://www.gnu.org/licenses/gpl-3.0.en.html
 # ----- Command ---------------
 # progress-bar percentage [-l|--length <bar-length>] [-s|--style <styleNumber>]

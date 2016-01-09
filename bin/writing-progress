@@ -1,8 +1,10 @@
 #!/bin/bash
 
+# ---------------------------------------
 # Depends on progress-bar
 # This is just an experiment to see if I can write it. Not really usefull unless you're writing a long boring essay.
 # License : GPLv3 - https://www.gnu.org/licenses/gpl-3.0.en.html
+# ---------------------------------------
 
 file="$1"
 if [[ -z "$file" ]]
