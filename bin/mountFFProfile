@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+SRC=$1
+DST=$2
+CIPHER=$3
+BYTES=$4
+SIG=$5
+
+sudo mount.ecryptfs $SRC $DST -o ecryptfs_fnek_sig=$SIG,ecryptfs_key_bytes=$BYTES,ecryptfs_cipher=$CIPHER,ecryptfs_sig=$SIG,key=passphrase,ecryptfs_enable_filename_crypto=y,ecryptfs_passthrough=n,no_sig_cache,ecryptfs_unlink_sigs
+
+firefox # no worry about other windows, they will be children of the first one
+sudo umount $DST # must enter sudo password again
