@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+################################
+# mount-for-process : mount an encrypted directory and unmount after the process terminate.
+#
+# License : GPLv3 - https://www.gnu.org/licenses/gpl-3.0.en.html
+# ----- Usage -------------------------------------------
+# Run it and mount the profile. Then run process, when you close process, it will unmount automatically.
+# ----- Command -----------------------------------------
+# mount-for-process PRC SRC DST CIPHER BYTES SIG
+# ----- Example -----------------------------------------
+# mount an encrypted firefox profile while it's running, and then unmount it when it terminates.
+# $ sudo /path/to/mount-for-process firefox /path/to/encrypted/firefox/profile /home/USERNAME/.mozilla/firefox/PROFILE aes 16 728c012e54e2a4e
+# ----- Mount for Firefox Desktop Entry Example ---------
+#[Desktop Entry]
+#Version=1.0
+#Type=Application
+#Terminal=true
+#Exec=sudo /path/to/mount-for-process firefox /path/to/encrypted/profile /home/USERNAME/.mozilla/firefox/PROFILE aes 16 728c012e54e2a4e
+#Name=EFox
+#Comment=Internet Browser firefox from Mozilla
+#Icon=/usr/share/icons/Numix-Square/scalable/apps/firefox-aurora.svg
+#Name[en_US]=EFox
+################################
+
+PRC="$1"
+SRC="$2"
+DST="$3"
+CIPHER="$4"
+BYTES="$5"
+SIG="$6"
+
+TIMEOUT=30 # Timeout for waiting for the process to run before unmounting automatically.
+
+isProcessRunning () {
+    ps -e | grep "$PRC" > /dev/null
+}
+
+if isProcessRunning ; then
+    echo "ERROR:--> $PRC is running, close all windows and start again" >&2
+    read
+    exit 1
+fi
+
+
+mount.ecryptfs "$SRC" "$DST" -o ecryptfs_fnek_sig=$SIG,ecryptfs_key_bytes=$BYTES,ecryptfs_cipher=$CIPHER,ecryptfs_sig=$SIG,key=passphrase,ecryptfs_enable_filename_crypto=y,ecryptfs_passthrough=n,no_sig_cache,ecryptfs_unlink_sigs
+if [ "$?" -ne "0" ]; then
+    echo "ERROR:--> Mounting encountered a problem" >&2
+    read
+    exit 1
+fi
+
+# wait for process to run
+echo ":--> Waiting for $PRC to open...(Timeout in "$TIMEOUT"s)"
+counter=0 # increment untill reaching $TIMEOUT.
+until isProcessRunning
+do
+    sleep 1s
+    [ $counter -ge $TIMEOUT ] && break || ((counter++))
+done
+
+echo ":--> $PRC is running. Waiting for termination..."
+until ! isProcessRunning
+do
+    sleep 3s
+done
+
+# unmount
+umount "$DST"
