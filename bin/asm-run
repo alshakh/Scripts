@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Just a quick script to run asm, while I am learning assembly. a.k.a NOT USEFUL IN OUTHER SITUATION
+
+if (( $# < 1 )) ; then
+	echo "No input" >&2
+	exit 1
+fi
+
+inputFile=$1
+shift
+
+tmpObj=/tmp/tObjAsm ; rm $tmpObj &> /dev/null
+tmpOut=/tmp/tOutAsm ; rm $tmpObj &> /dev/null
+
+nasm -e elf64 $inputFile -o $tmpObj
+ld $tmpObj -o $tmpOut
+
+$tmpOut
