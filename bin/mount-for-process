@@ -32,6 +32,10 @@ SIG="$6"
 
 TIMEOUT=30 # Timeout for waiting for the process to run before unmounting automatically.
 
+
+echo -en '\033]2;->>'$PRC'<<-\007'
+
+
 isProcessRunning () {
     ps -e | grep "$PRC" > /dev/null
 }
