@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#ForEach read from STDIN and apply as {}
+# example: echo every file with _ prefix
+#       ls | fe 'echo _{}'
+
+
+if [ -z "$@" ] ; then
+	echo "No command passed" >&2
+	exit 1
+fi
+
+xargs -I {} sh -c "$@" < /dev/stdin
